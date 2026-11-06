@@ -1,0 +1,259 @@
+{
+  "generated": "2026-10-24",
+  "provinces": [
+    {
+      "name": "湖南省",
+      "code": "hunan",
+      "file": "provinces/hunan.json",
+      "routes": 201,
+      "cities": 14,
+      "sizeKB": 1934
+    },
+    {
+      "name": "重庆市",
+      "code": "chongqing",
+      "file": "provinces/chongqing.json",
+      "routes": 134,
+      "cities": 24,
+      "sizeKB": 1151
+    },
+    {
+      "name": "广东省",
+      "code": "guangdong",
+      "file": "provinces/guangdong.json",
+      "routes": 127,
+      "cities": 21,
+      "sizeKB": 1020
+    },
+    {
+      "name": "甘肃省",
+      "code": "gansu",
+      "file": "provinces/gansu.json",
+      "routes": 90,
+      "cities": 15,
+      "sizeKB": 650
+    },
+    {
+      "name": "四川省",
+      "code": "sichuan",
+      "file": "provinces/sichuan.json",
+      "routes": 89,
+      "cities": 21,
+      "sizeKB": 1166
+    },
+    {
+      "name": "广西壮族自治区",
+      "code": "guangxi",
+      "file": "provinces/guangxi.json",
+      "routes": 77,
+      "cities": 14,
+      "sizeKB": 786
+    },
+    {
+      "name": "浙江省",
+      "code": "zhejiang",
+      "file": "provinces/zhejiang.json",
+      "routes": 75,
+      "cities": 11,
+      "sizeKB": 1011
+    },
+    {
+      "name": "湖北省",
+      "code": "hubei",
+      "file": "provinces/hubei.json",
+      "routes": 70,
+      "cities": 13,
+      "sizeKB": 564
+    },
+    {
+      "name": "陕西省",
+      "code": "shaanxi",
+      "file": "provinces/shaanxi.json",
+      "routes": 66,
+      "cities": 10,
+      "sizeKB": 776
+    },
+    {
+      "name": "江西省",
+      "code": "jiangxi",
+      "file": "provinces/jiangxi.json",
+      "routes": 60,
+      "cities": 11,
+      "sizeKB": 459
+    },
+    {
+      "name": "河南省",
+      "code": "henan",
+      "file": "provinces/henan.json",
+      "routes": 59,
+      "cities": 17,
+      "sizeKB": 222
+    },
+    {
+      "name": "山东省",
+      "code": "shandong",
+      "file": "provinces/shandong.json",
+      "routes": 59,
+      "cities": 16,
+      "sizeKB": 177
+    },
+    {
+      "name": "安徽省",
+      "code": "anhui",
+      "file": "provinces/anhui.json",
+      "routes": 57,
+      "cities": 16,
+      "sizeKB": 185
+    },
+    {
+      "name": "云南省",
+      "code": "yunnan",
+      "file": "provinces/yunnan.json",
+      "routes": 53,
+      "cities": 16,
+      "sizeKB": 659
+    },
+    {
+      "name": "辽宁省",
+      "code": "liaoning",
+      "file": "provinces/liaoning.json",
+      "routes": 49,
+      "cities": 14,
+      "sizeKB": 182
+    },
+    {
+      "name": "贵州省",
+      "code": "guizhou",
+      "file": "provinces/guizhou.json",
+      "routes": 48,
+      "cities": 9,
+      "sizeKB": 702
+    },
+    {
+      "name": "江苏省",
+      "code": "jiangsu",
+      "file": "provinces/jiangsu.json",
+      "routes": 47,
+      "cities": 13,
+      "sizeKB": 151
+    },
+    {
+      "name": "河北省",
+      "code": "hebei",
+      "file": "provinces/hebei.json",
+      "routes": 39,
+      "cities": 11,
+      "sizeKB": 185
+    },
+    {
+      "name": "黑龙江省",
+      "code": "heilongjiang",
+      "file": "provinces/heilongjiang.json",
+      "routes": 39,
+      "cities": 13,
+      "sizeKB": 179
+    },
+    {
+      "name": "新疆维吾尔自治区",
+      "code": "xinjiang",
+      "file": "provinces/xinjiang.json",
+      "routes": 39,
+      "cities": 14,
+      "sizeKB": 194
+    },
+    {
+      "name": "山西省",
+      "code": "shanxi",
+      "file": "provinces/shanxi.json",
+      "routes": 36,
+      "cities": 11,
+      "sizeKB": 190
+    },
+    {
+      "name": "内蒙古自治区",
+      "code": "neimenggu",
+      "file": "provinces/neimenggu.json",
+      "routes": 35,
+      "cities": 12,
+      "sizeKB": 180
+    },
+    {
+      "name": "福建省",
+      "code": "fujian",
+      "file": "provinces/fujian.json",
+      "routes": 33,
+      "cities": 9,
+      "sizeKB": 260
+    },
+    {
+      "name": "吉林省",
+      "code": "jilin",
+      "file": "provinces/jilin.json",
+      "routes": 29,
+      "cities": 9,
+      "sizeKB": 129
+    },
+    {
+      "name": "海南省",
+      "code": "hainan",
+      "file": "provinces/hainan.json",
+      "routes": 28,
+      "cities": 3,
+      "sizeKB": 152
+    },
+    {
+      "name": "青海省",
+      "code": "qinghai",
+      "file": "provinces/qinghai.json",
+      "routes": 24,
+      "cities": 8,
+      "sizeKB": 142
+    },
+    {
+      "name": "西藏自治区",
+      "code": "xizang",
+      "file": "provinces/xizang.json",
+      "routes": 19,
+      "cities": 7,
+      "sizeKB": 220
+    },
+    {
+      "name": "宁夏回族自治区",
+      "code": "ningxia",
+      "file": "provinces/ningxia.json",
+      "routes": 16,
+      "cities": 5,
+      "sizeKB": 61
+    },
+    {
+      "name": "北京市",
+      "code": "beijing",
+      "file": "provinces/beijing.json",
+      "routes": 5,
+      "cities": 1,
+      "sizeKB": 52
+    },
+    {
+      "name": "上海市",
+      "code": "shanghai",
+      "file": "provinces/shanghai.json",
+      "routes": 5,
+      "cities": 1,
+      "sizeKB": 25
+    },
+    {
+      "name": "天津市",
+      "code": "tianjin",
+      "file": "provinces/tianjin.json",
+      "routes": 5,
+      "cities": 1,
+      "sizeKB": 19
+    }
+  ],
+  "totalRoutes": 1713,
+  "totalWaypoints": 5022,
+  "totalCities": 360,
+  "routesIndex": "routes-index.json",
+  "routesIndexKB": 414,
+  "docs": "/api-docs/"
+}
