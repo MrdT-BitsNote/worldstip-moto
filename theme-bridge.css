@@ -1,0 +1,176 @@
+/* ============================================================
+   主题桥接层 theme-bridge.css
+   用途：让 public/ 下的静态页（map.html）复用
+        moto-site-astro 的设计系统（宣纸暖色 + 衬线字 + 硬边 letterpress）。
+
+   背景：src/styles/global.css 由 Astro 打包成 dist/_astro/xxx.css
+        （hash 命名、每次构建都变），静态页无法稳定直接引用，
+        故在此镜像其 :root 设计令牌。
+
+   维护：若 src/styles/global.css 的 :root / .site-header /
+        .site-footer 规则有变更，请同步更新本文件对应部分。
+
+   用法：在静态页 </style> 之后、</head> 之前引入，
+        以保证本层规则覆盖页面内联样式。
+   ============================================================ */
+
+:root {
+  /* 站点纸色三档 */
+  --bg: #F7F1E5;
+  --card: #E8DFCE;
+  --card-deep: #DDD3BF;
+
+  /* 边框与文字 */
+  --border: #3A2E28;
+  --border-light: rgba(58, 46, 40, 0.3);
+  --text: #3A2E28;
+  --muted: #7A6E62;
+
+  /* 站点强调色三档（朱红） */
+  --accent: #A63A2B;
+  --accent-light: #C9564A;
+  --accent-dark: #7A2A1E;
+
+  --green: #2F4A3C;
+  --mustard: #D9A441;
+
+  /* 硬边 letterpress 阴影（区别于原页柔和模糊阴影） */
+  --shadow: 2px 2px 0 rgba(58, 46, 40, 0.18);
+  --shadow-lg: 3px 3px 0 rgba(58, 46, 40, 0.22);
+
+  --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'STSongti', 'SimSun', 'Songti SC', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Courier New', Courier, 'Liberation Mono', monospace;
+
+  /* --- 兼容原页变量名：把冷灰 + 苹果蓝映射到站点暖色系 --- */
+  --surface: #FFFDF7;          /* 面板底：暖白宣纸 */
+  --surface-solid: #EFE8D9;    /* 实心面板：浅纸色 */
+  --text-primary: #3A2E28;     /* 主文字：暖褐 */
+  --text-secondary: #5C5148;   /* 次文字 */
+  --text-tertiary: #7A6E62;    /* 弱文字 */
+  --shadow-sm: 2px 2px 0 rgba(58, 46, 40, 0.14);
+  --shadow-md: 2px 2px 0 rgba(58, 46, 40, 0.18);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --orange: #C4761B;
+  --orange-light: rgba(196, 118, 27, 0.12);
+  --purple: #8B5A7A;
+  --purple-light: rgba(139, 90, 122, 0.12);
+  --red: #A63A2B;
+}
+
+/* 基础排版：衬线中文字体 + 宣纸噪点底 */
+body {
+  margin: 0;
+  font-family: var(--font-serif);
+  background-color: var(--bg);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  color: var(--text);
+  line-height: 1.65;
+}
+
+/* === 站点页头（规则镜像自 global.css .site-* 系列） === */
+.site-header {
+  background: var(--bg);
+  border-bottom: 3px double var(--border);
+}
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+.brand {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: var(--text);
+  text-decoration: none;
+}
+.brand .dot {
+  color: var(--accent);
+}
+.brand-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.5px;
+  margin-left: 10px;
+}
+@media (max-width: 720px) {
+  .brand-tag {
+    display: none;
+  }
+}
+.site-header nav a {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  margin-left: 20px;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  padding: 4px 2px 6px;
+  position: relative;
+}
+.site-header nav a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 0;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 9px);
+  transition: width 0.4s ease;
+}
+.site-header nav a:hover {
+  text-decoration: none;
+}
+.site-header nav a:hover::after {
+  width: 100%;
+}
+.site-header nav a.nav-home {
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  border-radius: 3px;
+  padding: 4px 10px 5px;
+  margin-left: 12px;
+}
+.site-header nav a.nav-home::after {
+  display: none;
+}
+.site-header nav a.nav-home:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+footer.site-footer {
+  margin-top: 48px;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  background: var(--card);
+  border-top: 3px double var(--border);
+  letter-spacing: 0.5px;
+}
+footer.site-footer a {
+  color: var(--green);
+}
+
+/* === 地图全屏页：注入页头后的错位修正 ===
+   原 .top-bar 固定在 top:0（高 52px），注入站点页头（60px）后必须整体下移，
+   否则会与站点页头重叠。 */
+.motogo-map .site-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1100;
+}
+.motogo-map .top-bar {
+  top: 60px !important;
+}
+.motogo-map .map-wrapper {
+  top: 112px !important;
+}

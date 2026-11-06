@@ -1,0 +1,142 @@
+/* ============================================================
+   实时风格切换层 themes.css
+   站点对外提供两套风格，由 /themes.js 切换并持久化：
+     复古（默认）— 无 data-theme，样式全在 global.css，不在此文件内
+     apple       — 苹果 UI 风（灰白底、白卡、大圆角、柔和阴影），挂 html[data-theme='apple']
+   注意：本文件必须后于 global.css / theme-bridge.css 引入。
+   ============================================================ */
+
+/* ---------- 切换器 UI ---------- */
+.thsw {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 95;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow-lg);
+}
+.thsw button {
+  font: 700 11px/1 var(--font-mono);
+  font-family: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  padding: 6px 9px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+.thsw button:hover { color: var(--text); }
+.thsw button.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+@media (max-width: 720px) {
+  .thsw { right: 8px; bottom: 8px; padding: 4px; gap: 2px; }
+  .thsw button { padding: 5px 6px; font-size: 10px; }
+}
+
+/* ============================================================
+   附加主题：苹果 UI 风（覆盖默认复古风）
+   ============================================================ */
+html[data-theme='apple'] {
+  --border: rgba(0, 0, 0, 0.1);
+  --border-light: rgba(0, 0, 0, 0.06);
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --green: #1d1d1f;
+  --mustard: #86868b;
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --font-serif: -apple-system, BlinkMacSystemFont, 'SF Pro SC', 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'SF Mono', ui-monospace, 'Menlo', 'Consolas', monospace;
+}
+html[data-theme='apple'] body {
+  background-color: #f5f5f7;
+  background-image: none;
+}
+html[data-theme='apple'] .site-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 60;
+}
+html[data-theme='apple'] .site-header nav a { color: #1d1d1f; }
+html[data-theme='apple'] .brand { font-weight: 700; letter-spacing: -0.2px; }
+html[data-theme='apple'] .card,
+html[data-theme='apple'] .stat-bar,
+html[data-theme='apple'] .wc-hero,
+html[data-theme='apple'] .route-card,
+html[data-theme='apple'] .tool-card,
+html[data-theme='apple'] .prov-card,
+html[data-theme='apple'] .pf-card,
+html[data-theme='apple'] .day-card,
+html[data-theme='apple'] .side-card,
+html[data-theme='apple'] .rr-card,
+html[data-theme='apple'] footer.site-footer {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+html[data-theme='apple'] .route-card::before { display: none; }
+html[data-theme='apple'] .route-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+html[data-theme='apple'] .type-badge,
+html[data-theme='apple'] .inline-label {
+  border: none;
+  border-radius: 999px;
+  transform: none;
+  background: var(--accent-light);
+  color: #fff;
+  box-shadow: none;
+}
+html[data-theme='apple'] .sticker {
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  transform: rotate(0);
+}
+html[data-theme='apple'] .section-title::after,
+html[data-theme='apple'] .site-header nav a::after {
+  background: var(--accent);
+  height: 3px;
+  border-radius: 3px;
+}
+html[data-theme='apple'] a:hover { text-decoration: none; }
+html[data-theme='apple'] .stamp { border-width: 2px; border-style: solid; transform: none; opacity: 1; }
+html[data-theme='apple'] .waypoint-list li::before { border: none; }
+html[data-theme='apple'] .map-pin-label { border: none; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+html[data-theme='apple'] .rc-gauge-track { border: none; }
+
+
+/* ---------- 省份底色压制（body[data-prov] 的纸色会破坏非复古主题，仅保留省份强调色） ---------- */
+html[data-theme='apple'] body[data-prov] { --bg: #f5f5f7; --card: #fff; --card-deep: #ececef; }
+
+/* ---------- 静态页（map）变量桥接 ---------- */
+/* 这两页内联 :root 用自有变量名（--surface/--text-primary/--radius-*…），
+   html[data-theme] 选择器特异性高于 :root，可将其映射到主题令牌 */
+html[data-theme='apple'] {
+  --surface: rgba(255, 255, 255, 0.86);
+  --surface-solid: #fff;
+  --text-primary: var(--text);
+  --text-secondary: var(--muted);
+  --text-tertiary: var(--muted);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
