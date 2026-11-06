@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorldStip — 全国摩托路线地图</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #f5f5f7;
+    --surface: rgba(255,255,255,0.95);
+    --surface-solid: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #86868b;
+    --accent: #0071e3;
+    --accent-light: rgba(0,113,227,0.08);
+    --border: rgba(0,0,0,0.08);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 20px;
+    --green: #34c759;
+    --green-light: rgba(52,199,89,0.12);
+    --orange: #ff9500;
+    --orange-light: rgba(255,149,0,0.12);
+    --purple: #af52de;
+    --purple-light: rgba(175,82,222,0.12);
+    --red: #ff3b30;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .top-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    height: 52px;
+    background: var(--surface);
+    backdrop-filter: blur(40px) saturate(180%);
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+  .top-bar .logo {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .stats strong { color: var(--accent); font-weight: 700; }
+  .loading-indicator {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    display: none;
+  }
+  .loading-indicator.active { display: block; }
+
+  .map-wrapper {
+    position: fixed;
+    top: 52px; left: 0; right: 0; bottom: 0;
+    display: flex;
+  }
+
+  #map { flex: 1; z-index: 1; }
+
+  .focus-bar {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 252, 246, 0.96);
+    border: 2px solid var(--accent, #A63A2B);
+    border-radius: 10px;
+    padding: 8px 14px;
+    box-shadow: var(--shadow-lg, 0 6px 20px rgba(0,0,0,0.18));
+    font-size: 13px;
+    max-width: calc(100vw - 420px);
+  }
+  .focus-bar .fb-label {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--accent, #A63A2B);
+    flex-shrink: 0;
+  }
+  .focus-bar .fb-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .focus-bar .fb-prov { color: #86868b; flex-shrink: 0; }
+  .focus-bar button {
+    flex-shrink: 0;
+    border: 1.5px solid var(--accent, #A63A2B);
+    background: transparent;
+    color: var(--accent, #A63A2B);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .focus-bar button:hover { background: var(--accent, #A63A2B); color: #fff; }
+
+  .side-panel {
+    width: 380px;
+    background: var(--surface-solid);
+    border-left: 0.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 2;
+  }
+
+  .panel-header {
+    padding: 18px 20px 14px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .panel-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+  .panel-header .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* Layer Toggle */
+  .layer-toggle {
+    padding: 12px 20px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .layer-btn {
+    padding: 6px 14px;
+    border-radius: 980px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .layer-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .layer-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .layer-btn .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .layer-btn.route .dot { background: var(--accent); }
+  .layer-btn.wp .dot { background: #8B5E3C; }
+  .layer-btn.wp.active { background: #8B5E3C; border-color: #8B5E3C; }
+  .layer-btn.active .dot { background: #fff; }
+
+  /* Province Filter */
+  .filter-section {
+    padding: 12px 20px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .filter-section h3 {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .province-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-height: 80px;
+    overflow-y: auto;
+  }
+  .province-list::-webkit-scrollbar { width: 4px; }
+  .province-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+  .prov-chip {
+    padding: 4px 10px;
+    border-radius: 980px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .prov-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .prov-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Content List */
+  .content-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .content-list::-webkit-scrollbar { width: 6px; }
+  .content-list::-webkit-scrollbar-track { background: transparent; }
+  .content-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
+
+  .item-card {
+    background: var(--surface-solid);
+    border-radius: 14px;
+    padding: 14px;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .item-card:hover {
+    border-color: rgba(0,113,227,0.2);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .item-card.is-focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(166,58,43,0.12), var(--shadow-md);
+    background: #FFFCF6;
+  }
+
+  .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .item-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .item-badge.route { background: var(--accent-light); color: var(--accent); }
+
+  .item-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .item-value span { font-size: 11px; color: var(--text-tertiary); font-weight: 500; }
+
+  .item-card h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    letter-spacing: -0.01em;
+  }
+  .item-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .item-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .item-tag {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.04);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+  .item-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border, rgba(0,0,0,0.08));
+  }
+  .item-wp {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .src-ok {
+    color: var(--green);
+    font-weight: 600;
+    border-bottom: 1px dotted var(--green);
+    cursor: help;
+  }
+  .item-link {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .item-link:hover { text-decoration: underline; }
+  .wp-tooltip { font-size: 12px; }
+  .wp-tooltip small { color: var(--text-secondary); }
+
+  /* Legend */
+  .legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: var(--surface);
+    backdrop-filter: blur(20px);
+    border-radius: 14px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow-lg);
+    border: 0.5px solid var(--border);
+    z-index: 1000;
+    font-size: 11px;
+  }
+  .legend h4 {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+    color: var(--text-secondary);
+  }
+  .legend-line {
+    width: 16px;
+    height: 3px;
+    border-radius: 2px;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  /* Performance info */
+  .perf-info {
+    position: absolute;
+    top: 60px;
+    right: 400px;
+    background: var(--surface);
+    backdrop-filter: blur(20px);
+    border-radius: 8px;
+    padding: 6px 12px;
+    box-shadow: var(--shadow-md);
+    border: 0.5px solid var(--border);
+    z-index: 1000;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    display: none;
+  }
+  .perf-info.active { display: block; }
+</style>
+<link rel="stylesheet" href="/theme-bridge.css" />
+<link rel="stylesheet" href="/themes.css" />
+<script src="/themes.js"></script>
+</head>
+<body class="motogo-map">
+
+
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">摩托行<span class="dot">.</span><span class="brand-tag">市区周边短途行</span></a>
+    <nav>
+      <a href="/">市区周边路线库</a>
+      <a href="/map.html">路线地图</a>
+      <a href="/api-docs/">数据 API</a>
+      <a class="nav-home" href="https://worldstip.com/" target="_blank" rel="noopener noreferrer">返回主站 ↗</a>
+    </nav>
+  </div>
+</header>
+<nav class="top-bar">
+  <div class="logo">WorldStip</div>
+  <div class="stats">
+    <div class="loading-indicator" id="loadingIndicator">加载中...</div>
+    <div><strong id="routeCount">0</strong> 路线</div>
+    <div><strong id="cityCount">0</strong> 城市</div>
+    <div><strong id="provCount">0</strong> 省份</div>
+  </div>
+</nav>
+
+<div class="map-wrapper">
+  <div id="map"></div>
+
+  <div class="focus-bar" id="focusBar" hidden>
+    <span class="fb-label">单线聚焦</span>
+    <span class="fb-name" id="fbName"></span>
+    <span class="fb-prov" id="fbProv"></span>
+    <button id="fbExit" title="退出聚焦（也支持 ESC / 点地图空白处）">退出 ✕</button>
+  </div>
+
+  <aside class="side-panel">
+    <div class="panel-header">
+      <h2>数据总览</h2>
+      <div class="subtitle">摩托路线 + 途经点</div>
+    </div>
+
+    <div class="layer-toggle">
+      <button class="layer-btn route active" data-layer="routes">
+        <span class="dot"></span> 路线
+      </button>
+      <button class="layer-btn wp active" data-layer="waypoints">
+        <span class="dot"></span> 途经点
+      </button>
+    </div>
+
+    <div class="filter-section">
+      <h3>省份</h3>
+      <div class="province-list" id="provinceList"></div>
+    </div>
+
+    <div class="content-list" id="contentList">
+      <div style="text-align:center;padding:40px 20px;color:var(--text-tertiary);font-size:13px;">
+        选择省份或缩放地图查看数据
+      </div>
+    </div>
+  </aside>
+
+  <div class="legend">
+    <h4>图例</h4>
+    <div class="legend-item">
+      <div class="legend-line" style="background: var(--accent)"></div>
+      <span>骑行路线</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #8B5E3C"></div>
+      <span>途经点 / 集合点</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA_BASE = 'map-data';
+const CANVAS_RENDERER = L.canvas({ padding: 0.5 });
+
+let map;
+let indexData = null;
+let loadedProvinces = {};
+let currentProvince = null;
+let layerVisibility = { routes: true, waypoints: true };
+
+// Layer groups
+let routeLayerGroup, waypointLayerGroup;
+// 当前视图作用域内的对象（省份切换时整体清空重建，避免外省图层残留）
+let scopePolylines = {}; // key: `${省名}::${路线id}`（各省 id 会重复，必须带省名）
+let scopeWaypoints = [];
+let focusedKey = null; // 单线聚焦：`${省名}::${路线id}`，非空时只显示这条线
+
+// Performance tracking
+const perf = {
+  start: performance.now(),
+  indexLoad: 0,
+  provinceLoads: {},
+  totalDataSize: 0,
+  events: []
+};
+
+function logPerf(event, data = {}) {
+  const elapsed = performance.now() - perf.start;
+  perf.events.push({ event, elapsed: Math.round(elapsed), ...data });
+  console.log(`[${Math.round(elapsed)}ms] ${event}`, data);
+}
+
+async function init() {
+  logPerf('Init start');
+  
+  // Load index
+  const t0 = performance.now();
+  const res = await fetch(`${DATA_BASE}/index.json`);
+  indexData = await res.json();
+  perf.indexLoad = performance.now() - t0;
+  logPerf('Index loaded', { size: Math.round(JSON.stringify(indexData).length / 1024) + 'KB', time: Math.round(perf.indexLoad) + 'ms' });
+
+  document.getElementById('routeCount').textContent = indexData.totalRoutes;
+  const cityEl = document.getElementById('cityCount');
+  if (cityEl) cityEl.textContent = indexData.totalCities ?? indexData.provinces.reduce((a, p) => a + (p.cities || 0), 0);
+  document.getElementById('provCount').textContent = indexData.provinces.length;
+
+  // Init map with canvas renderer
+  map = L.map('map', { preferCanvas: true }).setView([35.0, 105.0], 5);
+
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    attribution: '© 高德地图',
+    maxZoom: 18,
+    subdomains: '1234'
+  }).addTo(map);
+
+  routeLayerGroup = L.layerGroup().addTo(map);
+  // 途经点独立图层：canvas 渲染，避免 6000+ 标记产生 DOM 压力
+  waypointLayerGroup = L.layerGroup().addTo(map);
+
+  renderProvinceChips();
+  setupLayerToggle();
+
+  // 单线聚焦退出：按钮 / ESC / 点击地图空白处
+  document.getElementById('fbExit').addEventListener('click', exitFocus);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') exitFocus(); });
+  map.on('click', () => exitFocus());
+}
+
+function renderProvinceChips() {
+  const container = document.getElementById('provinceList');
+  container.innerHTML = '<button class="prov-chip active" data-prov="all">全部</button>';
+  
+  indexData.provinces.forEach(p => {
+    const short = p.name.replace(/省|市|自治区|特别行政区/g, '');
+    container.innerHTML += `<button class="prov-chip" data-prov="${p.name}" title="${p.routes}路线">${short}</button>`;
+  });
+
+  container.querySelectorAll('.prov-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('.prov-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectProvince(chip.dataset.prov);
+    });
+  });
+}
+
+function setupLayerToggle() {
+  document.querySelectorAll('.layer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      const layer = btn.dataset.layer;
+      layerVisibility[layer] = btn.classList.contains('active');
+      updateLayerVisibility();
+    });
+  });
+}
+
+function updateLayerVisibility() {
+  // 单线聚焦期间：路线/途经点图层由聚焦控制，图层开关只在非聚焦时生效
+  if (!focusedKey) {
+    // Routes
+    Object.values(scopePolylines).forEach(pl => {
+      if (layerVisibility.routes) pl.addTo(routeLayerGroup);
+      else routeLayerGroup.removeLayer(pl);
+    });
+
+    // Waypoints
+    scopeWaypoints.forEach(cm => {
+      if (layerVisibility.waypoints) waypointLayerGroup.addLayer(cm);
+      else waypointLayerGroup.removeLayer(cm);
+    });
+  }
+}
+
+async function loadProvince(provName) {
+  if (loadedProvinces[provName]) return loadedProvinces[provName];
+
+  const prov = indexData.provinces.find(p => p.name === provName);
+  if (!prov) return null;
+
+  const t0 = performance.now();
+  logPerf(`Loading ${provName}...`);
+
+  const res = await fetch(`${DATA_BASE}/${prov.file}`);
+  const data = await res.json();
+  const fetchTime = performance.now() - t0;
+  const dataSize = Math.round(JSON.stringify(data).length / 1024);
+  
+  perf.provinceLoads[provName] = { fetchTime: Math.round(fetchTime), size: dataSize };
+  perf.totalDataSize += dataSize;
+  logPerf(`${provName} loaded`, { fetchTime: Math.round(fetchTime) + 'ms', size: dataSize + 'KB', routes: data.routes.length });
+
+  loadedProvinces[provName] = data;
+  return data;
+}
+
+// 清空当前视图的全部叠加图层（省份/全部切换时调用，杜绝外省残留）
+function clearScope() {
+  routeLayerGroup.clearLayers();
+  waypointLayerGroup.clearLayers();
+  scopePolylines = {};
+  scopeWaypoints = [];
+}
+
+// 把某省数据画入当前作用域图层；key 带省名，避免各省相同 route.id 互相覆盖
+function renderProvince(provName) {
+  const data = loadedProvinces[provName];
+  if (!data) return;
+
+  // Render routes
+  data.routes.forEach(route => {
+    if (route.p && route.p.length > 1) {
+      const polyline = L.polyline(route.p, {
+        renderer: CANVAS_RENDERER,
+        color: route.c,
+        weight: 3,
+        opacity: 0.7,
+        smoothFactor: 1,
+      });
+      polyline.bindTooltip(route.n, { direction: 'top', sticky: true });
+      polyline.on('click', () => focusRoute(route, provName));
+      scopePolylines[`${provName}::${route.id}`] = polyline;
+      if (layerVisibility.routes) polyline.addTo(routeLayerGroup);
+    }
+  });
+
+  // Render waypoints（途经点 + 集合点）：canvas 圆点，首个点为集合点用深色实心
+  data.routes.forEach(route => {
+    const wArr = route.w || [];
+    const names = route.wn || [];
+    wArr.forEach((latlng, i) => {
+      const isHub = i === 0;
+      const wpName = names[i] || `途经点 ${i + 1}`;
+      const cm = L.circleMarker(latlng, {
+        renderer: CANVAS_RENDERER,
+        radius: isHub ? 5 : 3.5,
+        color: isHub ? '#7E4420' : (route.c || '#A63A2B'),
+        weight: isHub ? 2 : 1,
+        opacity: 0.95,
+        fillColor: isHub ? '#7E4420' : '#FFFDF8',
+        fillOpacity: isHub ? 0.95 : 0.9,
+        bubblingMouseEvents: false,
+      });
+      cm.bindTooltip(
+        `<div class="wp-tooltip">${wpName}${isHub ? ' · 集合点' : ''}<br><small>${route.n}</small></div>`,
+        { direction: 'top', offset: [0, -4] }
+      );
+      cm.on('click', () => focusRoute(route, provName));
+      scopeWaypoints.push(cm);
+      if (layerVisibility.waypoints) waypointLayerGroup.addLayer(cm);
+    });
+  });
+}
+
+// 省份/全部切换时图层重建，聚焦状态作废
+function clearFocus() {
+  focusedKey = null;
+  document.getElementById('focusBar').hidden = true;
+}
+
+async function selectProvince(provName) {
+  currentProvince = provName;
+  clearFocus();
+  clearScope();
+
+  if (provName === 'all') {
+    // 全部视图：逐省「取数（命中缓存即跳过）+ 画入图层」
+    for (const p of indexData.provinces) {
+      await loadProvince(p.name);
+      renderProvince(p.name);
+    }
+    document.getElementById('loadingIndicator').classList.remove('active');
+    renderContentList(null);
+    return;
+  }
+
+  const data = await loadProvince(provName);
+  document.getElementById('loadingIndicator').classList.remove('active');
+  if (data) {
+    renderProvince(provName);
+    // Fit bounds to province data
+    const allCoords = [];
+    data.routes.forEach(r => {
+      if (r.w) allCoords.push(...r.w);
+    });
+    if (allCoords.length > 0) {
+      // flyToBounds 自带中止上一次取景；fitBounds 在取景动画未结束时会被整段丢弃（停在旧视图）
+      map.flyToBounds(L.latLngBounds(allCoords), { padding: [60, 60], maxZoom: 10 });
+    }
+    renderContentList(data);
+  }
+}
+
+function focusRoute(route, provName) {
+  // provName 可能是 'all'（全部视图），回退到包含该 id 的省
+  if (!loadedProvinces[provName]) {
+    provName = Object.keys(loadedProvinces).find(k => loadedProvinces[k].routes.some(r => r.id === route.id)) || provName;
+  }
+  const key = `${provName}::${route.id}`;
+  if (focusedKey === key) { exitFocus(); return; } // 再点同一条 = 取消聚焦
+  focusedKey = key;
+
+  // 隐藏其他线路，突出当前线路
+  Object.entries(scopePolylines).forEach(([k, pl]) => {
+    if (k === key) { pl.setStyle({ weight: 6, opacity: 1 }); pl.addTo(routeLayerGroup); pl.bringToFront(); }
+    else { pl.setStyle({ weight: 3, opacity: 0.7 }); routeLayerGroup.removeLayer(pl); }
+  });
+  waypointLayerGroup.clearLayers();
+  (route.w || []).forEach((latlng, i) => {
+    const isHub = i === 0;
+    const wpName = (route.wn || [])[i] || `途经点 ${i + 1}`;
+    const cm = L.circleMarker(latlng, {
+      renderer: CANVAS_RENDERER,
+      radius: isHub ? 6 : 4,
+      color: isHub ? '#7E4420' : (route.c || '#A63A2B'),
+      weight: isHub ? 2.5 : 1.5,
+      opacity: 1,
+      fillColor: isHub ? '#7E4420' : '#FFFDF8',
+      fillOpacity: 1,
+      bubblingMouseEvents: false,
+    });
+    cm.bindTooltip(`${wpName}${isHub ? ' · 集合点' : ''}<br><small>${route.n}</small>`, { direction: 'top', offset: [0, -4] });
+    waypointLayerGroup.addLayer(cm);
+  });
+
+  document.getElementById('fbName').textContent = route.n;
+  document.getElementById('fbProv').textContent = provName;
+  document.getElementById('focusBar').hidden = false;
+
+  const pd = loadedProvinces[provName];
+  if (pd) renderContentList(pd, route.id, provName);
+  if (route.w && route.w.length > 0) {
+    map.flyToBounds(L.latLngBounds(route.w), { padding: [80, 80], maxZoom: 13 });
+  }
+  setTimeout(() => {
+    document.querySelector('.item-card.is-focus')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, 80);
+}
+
+function exitFocus() {
+  if (!focusedKey) return;
+  focusedKey = null;
+  document.getElementById('focusBar').hidden = true;
+  // 恢复当前视图全部图层
+  Object.values(scopePolylines).forEach(pl => { pl.setStyle({ weight: 3, opacity: 0.7 }); if (layerVisibility.routes) pl.addTo(routeLayerGroup); });
+  waypointLayerGroup.clearLayers();
+  if (layerVisibility.waypoints) scopeWaypoints.forEach(cm => waypointLayerGroup.addLayer(cm));
+  if (currentProvince && currentProvince !== 'all') {
+    renderContentList(loadedProvinces[currentProvince]);
+  } else {
+    renderContentList(null);
+  }
+}
+
+function renderContentList(provData, highlightId = null, provName = null) {
+  const container = document.getElementById('contentList');
+  if (!provData) {
+    // Show summary
+    container.innerHTML = indexData.provinces.map(p => `
+      <div class="item-card" data-prov="${p.name}">
+        <div class="item-header">
+          <div class="item-badge route">${p.name.replace(/省|市|自治区|特别行政区/g, '')}</div>
+          <div class="item-value">${p.routes}<span> 条</span></div>
+        </div>
+        <h4>${p.routes} 条路线</h4>
+        <div class="item-meta">${p.cities || 0} 个城市 · ${p.sizeKB}KB · 点击加载</div>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.item-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.prov-chip').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.prov-chip[data-prov="${card.dataset.prov}"]`)?.classList.add('active');
+        selectProvince(card.dataset.prov);
+      });
+    });
+    return;
+  }
+
+  let html = '';
+
+  // Routes
+  provData.routes.forEach(route => {
+    const wpN = (route.w || []).length;
+    const days = Number(route.days || 1);
+    html += `
+      <div class="item-card${highlightId === route.id ? ' is-focus' : ''}" data-route-id="${route.id}">
+        <div class="item-header">
+          <div class="item-badge route">${route.t}</div>
+          <div class="item-value">${route.d}<span> km</span></div>
+        </div>
+        <h4>${route.n}</h4>
+        <div class="item-tags">
+          ${(route.h || []).map(h => `<span class="item-tag">${h}</span>`).join('')}
+        </div>
+        <div class="item-foot">
+          <span class="item-wp">${route.city || ''} · ${wpN} 个途经点${days > 1 ? ` · ${days} 天` : ''}${route.cs === 'reviewed' ? ` · <span class="src-ok" title="文案改写自公开资料并经交叉核验（${route.srcs || 0} 条来源）">来源已核验</span>` : ''}</span>
+          <a class="item-link" href="${route.url || '#'}" target="_blank" rel="noopener">详情 →</a>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+
+  // Click handlers
+  container.querySelectorAll('[data-route-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const route = provData.routes.find(r => r.id === card.dataset.routeId);
+      if (route) focusRoute(route, currentProvince);
+    });
+  });
+  // 「详情 →」直接跳路线页，不触发卡片聚焦
+  container.querySelectorAll('.item-link').forEach(a => {
+    a.addEventListener('click', (e) => e.stopPropagation());
+  });
+}
+
+// Boot
+init().then(async () => {
+  renderContentList(null);
+  logPerf('Initial render complete');
+
+  // 后台预取全部省份数据（只进缓存、不上图；上图由 selectProvince 按当前视图决定）
+  setTimeout(async () => {
+    logPerf('Starting background preload of all provinces...');
+    const t0 = performance.now();
+
+    for (const p of indexData.provinces) {
+      await loadProvince(p.name);
+    }
+
+    const totalTime = performance.now() - t0;
+    logPerf('=== ALL PROVINCES CACHED ===', {
+      totalTime: Math.round(totalTime) + 'ms',
+      totalDataSize: perf.totalDataSize + 'KB',
+      provinces: indexData.provinces.length
+    });
+    console.log('\n=== PERFORMANCE SUMMARY ===');
+    console.log(`Index load: ${Math.round(perf.indexLoad)}ms`);
+    console.log(`Total data: ${perf.totalDataSize}KB`);
+    console.log(`Total preload time: ${Math.round(totalTime)}ms`);
+    Object.entries(perf.provinceLoads).forEach(([name, d]) => {
+      console.log(`  ${name}: ${d.fetchTime}ms (${d.size}KB)`);
+    });
+    console.log('===========================\n');
+
+    // 性能报告浮窗仅在 ?perf=1 时显示
+    if (new URLSearchParams(location.search).get('perf') === '1') {
+      const summaryDiv = document.createElement('div');
+      summaryDiv.style.cssText = 'position:fixed;top:60px;left:20px;background:rgba(255,255,255,0.95);padding:16px 20px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);z-index:9999;font-size:13px;max-width:300px;';
+      summaryDiv.innerHTML = `
+        <div style="font-weight:700;margin-bottom:8px;color:#0071e3;">性能报告</div>
+        <div style="color:#6e6e73;line-height:1.6;">
+          索引加载: <strong style="color:#1d1d1f;">${Math.round(perf.indexLoad)}ms</strong><br>
+          数据总量: <strong style="color:#1d1d1f;">${perf.totalDataSize}KB</strong><br>
+          总加载时间: <strong style="color:#1d1d1f;">${Math.round(totalTime)}ms</strong><br>
+          平均每省: <strong style="color:#1d1d1f;">${Math.round(totalTime / indexData.provinces.length)}ms</strong><br>
+          <span style="font-size:11px;color:#86868b;margin-top:8px;display:block;">详细日志见浏览器控制台 (F12)</span>
+        </div>
+      `;
+      document.body.appendChild(summaryDiv);
+      setTimeout(() => {
+        summaryDiv.style.transition = 'opacity 0.5s';
+        summaryDiv.style.opacity = '0';
+        setTimeout(() => summaryDiv.remove(), 500);
+      }, 10000);
+    }
+  }, 500);
+});
+</script>
+
+</body>
+</html>
